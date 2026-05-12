@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carte Stratégique — 1943</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  [data-theme="dark"]{--bg:#07090d;--bg2:rgba(10,14,22,.85);--bg3:#11161e;
+    --bone:#e8e3d6;--paper:#f0ead8;--dim:#8694a8;--vdim:#4a5566;
+    --rule:rgba(232,227,214,.12);--rule2:rgba(232,227,214,.22);
+    --overlay:rgba(7,9,13,.92);--parch:#2a2518;--parch2:#3a3428;--parch-line:#5a4a30;
+    --grid-bg:radial-gradient(ellipse 80% 60% at 50% 35%,#182334,#0a0e15 55%,#03050a)}
+  [data-theme="light"]{--bg:#e4dece;--bg2:rgba(190,180,160,.92);--bg3:#d0c8b4;
+    --bone:#18140e;--paper:#0e0a06;--dim:#4a4030;--vdim:#6a6050;
+    --rule:rgba(40,30,15,.2);--rule2:rgba(40,30,15,.35);
+    --overlay:rgba(180,170,150,.94);--parch:#e8dcc0;--parch2:#d8ccb0;--parch-line:#a08860;
+    --grid-bg:radial-gradient(ellipse 80% 60% at 50% 35%,#d8cfb6,#c8c0aa 55%,#b0a890)}
+  /* Textes dorés lisibles en mode clair */
+  [data-theme="light"] .btn-carte,
+  [data-theme="light"] .btn-go,
+  [data-theme="light"] .btn-go:hover,
+  [data-theme="light"] .cmap-title,
+  [data-theme="light"] .cmap-subtitle { color:#5a4518 !important; }
+  :root{--gold:#c9a961;--gold-b:#e8c878;--gold-glow:rgba(232,200,120,.4);
+    --allies:#4a8db8;--allies-b:#6fb1da;--axis:#a83232;--axis-b:#d05050;--neutre:#7a8a6a;
+    --fd:"Cinzel",Georgia,serif;--fu:"Manrope",system-ui,sans-serif;--fm:"JetBrains Mono",monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--bone);font-family:var(--fu)}
+  #app{position:fixed;inset:0;display:grid;grid-template-rows:42px 1fr 46px;background:var(--grid-bg)}
+  .hud{display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+    background:var(--bg2);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);z-index:20}
+  .hud-l{display:flex;align-items:center;gap:10px}
+  .btn-r{background:none;border:1px solid var(--rule);cursor:pointer;padding:3px 10px;
+    font-family:var(--fm);font-size:9px;color:var(--dim);letter-spacing:.08em;transition:all .2s}
+  .btn-r:hover{color:var(--gold);border-color:var(--gold)}
+  .hud-t{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--paper)}
+  .hud-ri{display:flex;align-items:center;gap:8px}
+  #utc{font-family:var(--fm);font-size:10px;color:var(--dim);letter-spacing:.1em}
+  .bi{background:none;border:1px solid var(--rule);cursor:pointer;width:28px;height:28px;display:flex;
+    align-items:center;justify-content:center;color:var(--dim);font-size:13px;transition:all .2s}
+  .bi:hover{color:var(--gold);border-color:var(--gold)}
+  /* Zone centrale */
+  .centre{display:flex;z-index:10;padding:6px 14px;gap:10px;overflow:hidden}
+  .col{flex:1;display:flex;flex-direction:column;gap:4px;overflow-y:auto;padding:2px}
+  .col::-webkit-scrollbar{width:3px} .col::-webkit-scrollbar-thumb{background:var(--vdim)}
+  .col-t{font-family:var(--fd);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    padding:5px 10px;border-left:3px solid var(--c);background:var(--bg2);margin-bottom:2px;
+    display:flex;align-items:center;justify-content:space-between}
+  .col-t .cnt{font-family:var(--fm);font-size:9px;color:var(--dim)}
+  .col-n{width:180px} .col-n .col-t{border-left-color:var(--neutre)}
+  /* Carte pays */
+  .pays{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--rule);
+    background:var(--bg2);cursor:default;transition:all .25s}
+  .pays.sel{cursor:pointer} .pays.sel:hover{border-color:var(--gold);box-shadow:0 0 10px var(--gold-glow)}
+  .pays.choisi{border-color:var(--gold-b);box-shadow:0 0 16px var(--gold-glow);background:rgba(201,169,97,.08)}
+  .pays .flag{font-size:20px} .pays .info{flex:1}
+  .pays .nom{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--paper)}
+  .pays .statut{font-family:var(--fm);font-size:6px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+  .pays .lock{font-size:14px;opacity:.5}
+  .pays.captured{opacity:.7;border-style:dashed}
+  .pays .cap-badge{font-family:var(--fm);font-size:5px;letter-spacing:.06em;text-transform:uppercase;padding:1px 4px;border:1px solid}
+  /* Barre bas */
+  .bbar{display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+    background:var(--bg2);backdrop-filter:blur(10px);border-top:1px solid var(--rule);z-index:20}
+  .stats{display:flex;gap:12px;font-family:var(--fm);font-size:9px}
+  .stat{display:flex;align-items:center;gap:3px} .stat .sd{width:7px;height:7px;border-radius:2px}
+  .stat .sv{font-weight:700;color:var(--paper);font-size:11px}
+  .stat .sl{color:var(--dim);text-transform:uppercase}
+  .acts{display:flex;gap:6px;align-items:center}
+  #si{font-family:var(--fm);font-size:8px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+  .btn-go{padding:6px 18px;font-family:var(--fd);font-size:10px;font-weight:600;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold);cursor:pointer;border:1px solid var(--gold);
+    background:linear-gradient(180deg,rgba(201,169,97,.1),rgba(201,169,97,.02));transition:all .3s}
+  .btn-go:hover:not(:disabled){box-shadow:0 0 16px var(--gold-glow)}
+  .btn-go:disabled{opacity:.3;cursor:default}
+  .btn-rst{padding:4px 10px;font-family:var(--fm);font-size:7px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--dim);cursor:pointer;border:1px solid var(--rule);background:none;transition:all .2s}
+  .btn-rst:hover{color:var(--axis-b);border-color:var(--axis)}
+  .btn-carte{padding:5px 14px;font-family:var(--fm);font-size:8px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--gold);cursor:pointer;border:1px solid var(--gold);background:rgba(201,169,97,.06);transition:all .2s}
+  .btn-carte:hover{box-shadow:0 0 12px var(--gold-glow)}
+
+  /* ═══ CARTE DE CONQUÊTE (style parchemin/pirate) ═══ */
+  #conquest-map{display:none;position:fixed;inset:0;z-index:50;background:var(--overlay);
+    align-items:center;justify-content:center}
+  #conquest-map.visible{display:flex}
+  .cmap-inner{width:min(90vw,700px);height:min(75vh,440px);position:relative;
+    background:var(--parch);border:3px solid var(--parch-line);
+    box-shadow:0 0 40px rgba(0,0,0,.5),inset 0 0 60px rgba(0,0,0,.15);overflow:hidden;
+    display:flex;flex-direction:column}
+  /* Texture parchemin */
+  .cmap-inner::before{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 18px,rgba(0,0,0,.03) 18px,rgba(0,0,0,.03) 19px);pointer-events:none}
+  /* Bords déchirés */
+  .cmap-inner::after{content:"";position:absolute;inset:0;
+    box-shadow:inset 4px 4px 12px rgba(0,0,0,.2),inset -4px -4px 12px rgba(0,0,0,.15);pointer-events:none}
+  .cmap-title{text-align:center;padding:14px 0 6px;font-family:var(--fd);font-size:18px;font-weight:700;
+    color:var(--parch-line);letter-spacing:.14em;position:relative;z-index:2}
+  .cmap-subtitle{text-align:center;font-family:var(--fm);font-size:7px;color:var(--parch-line);
+    letter-spacing:.2em;text-transform:uppercase;opacity:.7;margin-bottom:8px}
+  /* Boussole */
+  .compass{position:absolute;top:16px;right:20px;width:50px;height:50px;opacity:.4;z-index:2}
+  .compass svg{width:50px;height:50px}
+  /* Le chemin SVG */
+  .cmap-svg{width:100%;height:calc(100% - 80px);position:relative;z-index:2}
+  /* Score */
+  .cmap-score{display:flex;justify-content:center;gap:20px;padding:6px 0;
+    font-family:var(--fm);font-size:10px;position:relative;z-index:2}
+  .cmap-score .cs{display:flex;align-items:center;gap:4px}
+  .cmap-score .cs b{font-size:16px}
+  /* Fermer */
+  .cmap-close{position:absolute;top:8px;left:12px;background:none;border:1px solid var(--parch-line);
+    color:var(--parch-line);cursor:pointer;font-family:var(--fm);font-size:8px;padding:3px 8px;z-index:5;
+    letter-spacing:.08em;transition:all .2s}
+  .cmap-close:hover{background:rgba(0,0,0,.1)}
+
+  /* Victoire globale */
+  #vg{display:none;position:fixed;inset:0;z-index:60;background:var(--overlay);
+    flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
+  #vg.visible{display:flex}
+  .vg-t{font-family:var(--fd);font-weight:700;font-size:clamp(22px,3.5vw,40px);color:var(--paper)}
+  .vg-m{font-family:var(--fu);font-size:14px;color:var(--dim);max-width:500px;line-height:1.6;font-style:italic}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hud">
+    <div class="hud-l">
+      <button class="btn-r" onclick="window.location.href='index.html'">◂ Accueil</button>
+      <span class="hud-t">Carte Stratégique — 1943</span>
+    </div>
+    <div class="hud-ri"><span id="utc">UTC 00:00:00</span>
+      <button class="bi" id="btn-son" onclick="SON.toggleMute()">🔊</button>
+      <input type="range" id="vol-slider" min="0" max="100" value="50" oninput="SON.setVolume(this.value/100)" style="width:50px;height:3px;-webkit-appearance:none;appearance:none;background:var(--rule2);outline:none;cursor:pointer;vertical-align:middle"/>
+      <button class="bi" id="bt" onclick="toggleTheme()">☀</button></div>
+  </div>
+  <div class="centre">
+    <div class="col" id="colA"><div class="col-t" style="--c:var(--allies)"><span style="color:var(--allies-b)">Forces Alliées</span><span class="cnt" id="cntA">8</span></div></div>
+    <div class="col col-n" id="colN"><div class="col-t"><span style="color:var(--neutre)">Neutres</span><span class="cnt" id="cntN">6</span></div></div>
+    <div class="col" id="colX"><div class="col-t" style="--c:var(--axis)"><span style="color:var(--axis-b)">Puissances de l'Axe</span><span class="cnt" id="cntX">8</span></div></div>
+  </div>
+  <div class="bbar">
+    <div class="stats">
+      <div class="stat"><div class="sd" style="background:var(--allies)"></div><span class="sv" id="na">0</span><span class="sl">Conquêtes Alliés</span></div>
+      <div class="stat"><div class="sd" style="background:var(--axis)"></div><span class="sv" id="nx">0</span><span class="sl">Conquêtes Axe</span></div>
+      <div class="stat" style="color:var(--gold)"><span class="sl">Objectif : 4/6</span></div>
+    </div>
+    <div class="acts">
+      <span id="si">Choisissez vos pays</span>
+      <button class="btn-carte" onclick="ouvrirConquestMap()">🗺 Carte de conquête</button>
+      <button class="btn-rst" onclick="resetCampagne()">↻ Reset</button>
+      <button class="btn-go" id="bg" onclick="lancerPartie()" disabled>Combattre ▸</button>
+    </div>
+  </div>
+</div>
+
+<!-- CARTE DE CONQUÊTE (style parchemin) -->
+<div id="conquest-map">
+  <div class="cmap-inner">
+    <button class="cmap-close" onclick="fermerConquestMap()">✕ Fermer</button>
+    <div class="compass"><svg viewBox="0 0 50 50"><polygon points="25,2 28,20 25,16 22,20" fill="var(--parch-line)"/><polygon points="25,48 28,30 25,34 22,30" fill="var(--parch-line)" opacity=".4"/><polygon points="2,25 20,22 16,25 20,28" fill="var(--parch-line)" opacity=".4"/><polygon points="48,25 30,22 34,25 30,28" fill="var(--parch-line)" opacity=".4"/><circle cx="25" cy="25" r="3" fill="none" stroke="var(--parch-line)" stroke-width="1"/><text x="25" y="12" text-anchor="middle" font-size="6" font-family="serif" fill="var(--parch-line)">N</text></svg></div>
+    <div class="cmap-title">Carte de Conquête</div>
+    <div class="cmap-subtitle">Territoires neutres en jeu — premier à 4 victoires</div>
+    <svg class="cmap-svg" id="cmap-svg" viewBox="0 0 650 280" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="cmap-score">
+      <div class="cs" style="color:var(--allies-b)"><b id="csA">0</b> Alliés</div>
+      <div class="cs" style="color:var(--dim)">—</div>
+      <div class="cs" style="color:var(--axis-b)"><b id="csX">0</b> Axe</div>
+    </div>
+  </div>
+</div>
+
+<!-- VICTOIRE GLOBALE -->
+<div id="vg"><div class="vg-t" id="vgt"></div><div class="vg-m" id="vgm"></div>
+  <button class="btn-go" onclick="resetCampagne();document.getElementById('vg').classList.remove('visible')" style="margin-top:14px">↻ Nouvelle Campagne</button>
+  <button class="btn-r" onclick="window.location.href='index.html'" style="margin-top:6px">◂ Accueil</button>
+</div>
+
+<script src="js/son.js"></script>
+<script>
+// ════════════════════════════════════════
+//  DONNÉES PAYS WW2 — 1943
+// ════════════════════════════════════════
+var ALLIES=[
+  {id:'usa',nom:'États-Unis',flag:'🇺🇸'},{id:'uk',nom:'Royaume-Uni',flag:'🇬🇧'},
+  {id:'urss',nom:'Union Soviétique',flag:'🇷🇺'},{id:'france',nom:'France Libre',flag:'🇫🇷'},
+  {id:'chine',nom:'Chine',flag:'🇨🇳'},{id:'canada',nom:'Canada',flag:'🇨🇦'},
+  {id:'australie',nom:'Australie',flag:'🇦🇺'},{id:'bresil',nom:'Brésil',flag:'🇧🇷'}
+];
+var AXE=[
+  {id:'allemagne',nom:'Allemagne',flag:'🇩🇪'},{id:'italie',nom:'Italie',flag:'🇮🇹'},
+  {id:'japon',nom:'Japon',flag:'🇯🇵'},{id:'hongrie',nom:'Hongrie',flag:'🇭🇺'},
+  {id:'roumanie',nom:'Roumanie',flag:'🇷🇴'},{id:'bulgarie',nom:'Bulgarie',flag:'🇧🇬'},
+  {id:'finlande',nom:'Finlande',flag:'🇫🇮'},{id:'thailande',nom:'Thaïlande',flag:'🇹🇭'}
+];
+var NEUTRES=[
+  {id:'suisse',nom:'Suisse',flag:'🇨🇭'},{id:'suede',nom:'Suède',flag:'🇸🇪'},
+  {id:'espagne',nom:'Espagne',flag:'🇪🇸'},{id:'portugal',nom:'Portugal',flag:'🇵🇹'},
+  {id:'turquie',nom:'Turquie',flag:'🇹🇷'},{id:'argentine',nom:'Argentine',flag:'🇦🇷'}
+];
+
+// Positions sur la carte de conquête (chemin sinueux)
+var POSITIONS_CHEMIN=[
+  {x:80,y:60},{x:200,y:180},{x:320,y:70},{x:430,y:200},{x:520,y:90},{x:590,y:210}
+];
+
+var MODE='',DIFF='',selJ1=null,selJ2=null;
+
+// ════════════════════════════════════════
+//  ÉTAT CAMPAGNE (localStorage)
+// ════════════════════════════════════════
+// conquetes = [{id,camp}] — pays neutres capturés
+function chargerConquetes(){try{var s=localStorage.getItem('conquetes');return s?JSON.parse(s):[];}catch(e){return[];}}
+function sauverConquetes(c){try{localStorage.setItem('conquetes',JSON.stringify(c));}catch(e){}}
+function resetCampagne(){try{localStorage.removeItem('conquetes');}catch(e){}selJ1=null;selJ2=null;afficherTout();}
+
+function compterConquetes(){
+  var c=chargerConquetes(),a=0,x=0;
+  c.forEach(function(q){if(q.camp==='allies')a++;else if(q.camp==='axe')x++;});
+  return{allies:a,axe:x};
+}
+
+// ════════════════════════════════════════
+//  AFFICHAGE LISTES
+// ════════════════════════════════════════
+function afficherTout(){
+  var conquetes=chargerConquetes();
+  afficherColonne('colA',ALLIES,'allies',conquetes);
+  afficherColonne('colX',AXE,'axe',conquetes);
+  afficherNeutres(conquetes);
+  majStats(conquetes);
+  majSelInfo();
+  verifierVictoireGlobale();
+}
+
+function afficherColonne(id,pays,camp,conquetes){
+  var col=document.getElementById(id);
+  var titre=col.querySelector('.col-t');
+  col.innerHTML='';col.appendChild(titre);
+  titre.querySelector('.cnt').textContent=pays.length+' pays';
+  pays.forEach(function(p){
+    var d=document.createElement('div');d.className='pays';
+    var selectable=(camp==='allies'&&selJ1===null)||(camp==='axe'&&selJ2===null&&MODE!=='jvo');
+    if(selectable) d.classList.add('sel');
+    if(selJ1===p.id||selJ2===p.id) d.classList.add('choisi');
+    var stxt=camp==='allies'?'Forces Alliées':'Puissances de l\'Axe';
+    if(selJ1===p.id) stxt='✦ JOUEUR 1';
+    if(selJ2===p.id) stxt='✦ JOUEUR 2';
+    d.innerHTML='<span class="flag">'+p.flag+'</span><div class="info"><div class="nom">'+p.nom+'</div><div class="statut">'+stxt+'</div></div>';
+    d.addEventListener('click',function(){selectionnerPays(p,camp);});
+    col.appendChild(d);
+  });
+}
+
+function afficherNeutres(conquetes){
+  var col=document.getElementById('colN');
+  var titre=col.querySelector('.col-t');
+  col.innerHTML='';col.appendChild(titre);
+  var restants=0;
+  NEUTRES.forEach(function(p){
+    var conq=conquetes.find(function(c){return c.id===p.id;});
+    var d=document.createElement('div');d.className='pays';
+    if(conq){
+      d.classList.add('captured');
+      var campTxt=conq.camp==='allies'?'Alliés':'Axe';
+      var campColor=conq.camp==='allies'?'var(--allies-b)':'var(--axis-b)';
+      d.innerHTML='<span class="flag">'+p.flag+'</span><div class="info"><div class="nom">'+p.nom+'</div>'
+        +'<div class="statut">Capturé</div></div><span class="cap-badge" style="color:'+campColor+';border-color:'+campColor+'">'+campTxt+'</span>';
+    } else {
+      restants++;
+      d.innerHTML='<span class="flag">'+p.flag+'</span><div class="info"><div class="nom">'+p.nom+'</div>'
+        +'<div class="statut">Territoire neutre</div></div><span class="lock">🔒</span>';
+    }
+    col.appendChild(d);
+  });
+  titre.querySelector('.cnt').textContent=restants+' verrouillés';
+}
+
+function majStats(conquetes){
+  var c=compterConquetes();
+  document.getElementById('na').textContent=c.allies;
+  document.getElementById('nx').textContent=c.axe;
+}
+
+// ════════════════════════════════════════
+//  SÉLECTION DES PAYS
+// ════════════════════════════════════════
+function selectionnerPays(p,camp){
+  if(camp==='allies'&&selJ1===null){selJ1=p.id;
+    if(MODE==='jvo'){selJ2=AXE[Math.floor(Math.random()*AXE.length)].id;}
+    afficherTout();return;}
+  if(camp==='axe'&&selJ2===null&&MODE!=='jvo'){selJ2=p.id;afficherTout();return;}
+  if(selJ1===p.id){selJ1=null;selJ2=null;afficherTout();return;}
+  if(selJ2===p.id){selJ2=null;afficherTout();return;}
+}
+
+function majSelInfo(){
+  var info=document.getElementById('si'),btn=document.getElementById('bg');
+  if(!selJ1){info.textContent='J1 : choisissez un pays allié';btn.disabled=true;}
+  else if(!selJ2){info.textContent=MODE==='jvo'?'IA sélectionne...':'J2 : choisissez un pays de l\'Axe';btn.disabled=true;}
+  else{
+    var p1=ALLIES.find(function(p){return p.id===selJ1;})||{flag:'',nom:''};
+    var p2=AXE.find(function(p){return p.id===selJ2;})||{flag:'',nom:''};
+    info.textContent=p1.flag+' '+p1.nom+'  ⚔  '+p2.flag+' '+p2.nom;btn.disabled=false;
+  }
+}
+
+function lancerPartie(){
+  if(!selJ1||!selJ2)return;
+  var p1=ALLIES.find(function(p){return p.id===selJ1;});
+  var p2=AXE.find(function(p){return p.id===selJ2;});
+  window.location.href='jeu.html?mode='+MODE+'&diff='+DIFF
+    +'&j1nom='+encodeURIComponent(p1.flag+' '+p1.nom)+'&j2nom='+encodeURIComponent(p2.flag+' '+p2.nom)
+    +'&j1id='+p1.id+'&j2id='+p2.id;
+}
+
+// ════════════════════════════════════════
+//  TRAITEMENT RÉSULTAT → capture neutre
+// ════════════════════════════════════════
+function traiterResultat(){
+  var p=new URLSearchParams(window.location.search);
+  var g=p.get('gagnant');
+  if(!g) return;
+  var conquetes=chargerConquetes();
+  var camp=g==='j1'?'allies':'axe';
+  // Trouver le prochain neutre non capturé
+  for(var i=0;i<NEUTRES.length;i++){
+    var deja=conquetes.some(function(c){return c.id===NEUTRES[i].id;});
+    if(!deja){conquetes.push({id:NEUTRES[i].id,camp:camp});break;}
+  }
+  sauverConquetes(conquetes);
+}
+
+// ════════════════════════════════════════
+//  CARTE DE CONQUÊTE (parchemin/pirate)
+// ════════════════════════════════════════
+function ouvrirConquestMap(){
+  SON.jouer('carte');
+  document.getElementById('conquest-map').classList.add('visible');
+  dessinerConquestMap();
+}
+function fermerConquestMap(){document.getElementById('conquest-map').classList.remove('visible');}
+
+function dessinerConquestMap(){
+  var conquetes=chargerConquetes();
+  var svg=document.getElementById('cmap-svg');
+  var html='';
+  var cnt=compterConquetes();
+  document.getElementById('csA').textContent=cnt.allies;
+  document.getElementById('csX').textContent=cnt.axe;
+
+  // Chemin sinueux (pointillés style carte au trésor)
+  var pathD='M '+POSITIONS_CHEMIN[0].x+' '+POSITIONS_CHEMIN[0].y;
+  for(var i=1;i<POSITIONS_CHEMIN.length;i++){
+    var prev=POSITIONS_CHEMIN[i-1],curr=POSITIONS_CHEMIN[i];
+    var cx1=prev.x+(curr.x-prev.x)*.5, cy1=prev.y;
+    var cx2=prev.x+(curr.x-prev.x)*.5, cy2=curr.y;
+    pathD+=' C '+cx1+' '+cy1+' '+cx2+' '+cy2+' '+curr.x+' '+curr.y;
+  }
+  html+='<path d="'+pathD+'" fill="none" stroke="var(--parch-line)" stroke-width="2.5" stroke-dasharray="8 6" opacity=".6"/>';
+
+  // Étapes (pays neutres)
+  NEUTRES.forEach(function(p,i){
+    var pos=POSITIONS_CHEMIN[i];
+    var conq=conquetes.find(function(c){return c.id===p.id;});
+    var r=28;
+
+    if(conq){
+      // Capturé — cercle coloré
+      var col=conq.camp==='allies'?'var(--allies)':'var(--axis)';
+      var colB=conq.camp==='allies'?'var(--allies-b)':'var(--axis-b)';
+      var lbl=conq.camp==='allies'?'ALLIÉS':'AXE';
+      html+='<circle cx="'+pos.x+'" cy="'+pos.y+'" r="'+r+'" fill="'+col+'" fill-opacity=".2" stroke="'+col+'" stroke-width="2.5"/>';
+      html+='<text x="'+pos.x+'" y="'+(pos.y+5)+'" text-anchor="middle" font-size="20">'+p.flag+'</text>';
+      html+='<text x="'+pos.x+'" y="'+(pos.y+r+14)+'" text-anchor="middle" font-family="var(--fd)" font-size="9" font-weight="600" fill="var(--parch-line)">'+p.nom+'</text>';
+      html+='<text x="'+pos.x+'" y="'+(pos.y+r+24)+'" text-anchor="middle" font-family="var(--fm)" font-size="7" fill="'+colB+'" letter-spacing=".1em">'+lbl+'</text>';
+    } else {
+      // Verrouillé — cercle gris avec cadenas
+      var isNext=true;
+      for(var j=0;j<i;j++){
+        if(!conquetes.some(function(c){return c.id===NEUTRES[j].id;})){isNext=false;break;}
+      }
+      var op=isNext?'1':'.4';
+      html+='<circle cx="'+pos.x+'" cy="'+pos.y+'" r="'+r+'" fill="var(--parch2)" stroke="var(--parch-line)" stroke-width="1.5" stroke-dasharray="4 3" opacity="'+op+'"/>';
+      html+='<text x="'+pos.x+'" y="'+(pos.y+2)+'" text-anchor="middle" font-size="16" opacity="'+op+'">🔒</text>';
+      html+='<text x="'+pos.x+'" y="'+(pos.y+r+14)+'" text-anchor="middle" font-family="var(--fd)" font-size="9" fill="var(--parch-line)" opacity="'+op+'">'+p.nom+'</text>';
+      if(isNext){
+        html+='<text x="'+pos.x+'" y="'+(pos.y+r+24)+'" text-anchor="middle" font-family="var(--fm)" font-size="6" fill="var(--gold)" letter-spacing=".12em">EN JEU</text>';
+      }
+    }
+    // Numéro d'étape
+    html+='<text x="'+(pos.x-r-8)+'" y="'+(pos.y+4)+'" text-anchor="middle" font-family="var(--fm)" font-size="8" fill="var(--parch-line)" opacity=".5">'+(i+1)+'</text>';
+  });
+
+  svg.innerHTML=html;
+}
+
+// ════════════════════════════════════════
+//  VICTOIRE GLOBALE (4/6)
+// ════════════════════════════════════════
+function verifierVictoireGlobale(){
+  var c=compterConquetes();
+  if(c.allies>=4){
+    document.getElementById('vgt').textContent='🏆 Les Alliés ont gagné !';
+    document.getElementById('vgm').textContent='Bienvenue dans le monde libre… libre de payer des taxes.';
+    document.getElementById('vg').classList.add('visible');
+    SON.jouerMP3('sons/victoire_allies.mp3');
+  } else if(c.axe>=4){
+    document.getElementById('vgt').textContent='⚫ Les puissances de l\'Axe ont gagné !';
+    document.getElementById('vgm').textContent='Bienvenue dans le monde autoritaire : une seule marque et elle est obligatoire.';
+    document.getElementById('vg').classList.add('visible');
+    SON.jouerMP3('sons/victoire_axe.mp3');
+  }
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+function toggleTheme(){var h=document.documentElement;var t=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',t);document.getElementById('bt').textContent=t==='dark'?'☀':'🌙';}
+setInterval(function(){var d=new Date();document.getElementById('utc').textContent='UTC '+
+  String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+
+  String(d.getUTCSeconds()).padStart(2,'0');},1000);
+
+(function(){var p=new URLSearchParams(window.location.search);MODE=p.get('mode')||'jvj';DIFF=p.get('diff')||'normal';
+  traiterResultat();afficherTout();SON.lancerMusique('sons/musique.mp3');})();
+</script>
+</body>
+</html>

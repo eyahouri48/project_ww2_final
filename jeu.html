@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conquête des Territoires</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ═══ THÈME SOMBRE ═══ */
+    [data-theme="dark"] {
+      --bg:#07090d; --bg2:#0c1218; --bg-panel:rgba(10,14,22,.85);
+      --bg-cell:#1f2838; --bg-cell-alt:#262f40;
+      --border:rgba(232,227,214,.12); --border2:rgba(232,227,214,.22);
+      --txt:#e8e3d6; --txt2:#f0ead8; --txt-dim:#8694a8; --txt-vdim:#4a5566;
+      --grid-bg:radial-gradient(ellipse 80% 60% at 50% 35%,#182334,#0a0e15 55%,#03050a);
+      --overlay:rgba(7,9,13,.88);
+    }
+    /* ═══ THÈME CLAIR ═══ */
+    [data-theme="light"] {
+      --bg:#e4dece; --bg2:#d4ccba; --bg-panel:rgba(190,180,160,.92);
+      --bg-cell:#d8d0bc; --bg-cell-alt:#c4bca6;
+      --border:rgba(40,30,15,.2); --border2:rgba(40,30,15,.35);
+      --txt:#18140e; --txt2:#0e0a06; --txt-dim:#4a4030; --txt-vdim:#7a7060;
+      --grid-bg:radial-gradient(ellipse 80% 60% at 50% 35%,#d8cfb6,#c8c0aa 55%,#b0a890);
+      --overlay:rgba(180,170,150,.94);
+    }
+    /* Textes dorés lisibles en mode clair (fond clair → texte brun foncé) */
+    [data-theme="light"] #t-txt,
+    [data-theme="light"] #t-txt.warn,
+    [data-theme="light"] #ta,
+    [data-theme="light"] #tpl,
+    [data-theme="light"] .me,
+    [data-theme="light"] .ms,
+    [data-theme="light"] .mt .ac,
+    [data-theme="light"] .te,
+    [data-theme="light"] .bc.pr,
+    [data-theme="light"] .bc.pr:hover,
+    [data-theme="light"] .bd:hover,
+    [data-theme="light"] .bm:hover { color:#5a4518 !important; }
+    :root {
+      --allies:#4a8db8; --allies-bright:#6fb1da; --allies-glow:rgba(111,177,218,.45);
+      --axis:#a83232; --axis-bright:#d05050; --axis-glow:rgba(208,80,80,.4);
+      --gold:#c9a961; --gold-bright:#e8c878; --gold-glow:rgba(232,200,120,.4);
+      --vert:#5dca87;
+      --font-display:"Cinzel",Georgia,serif;
+      --font-ui:"Manrope",-apple-system,system-ui,sans-serif;
+      --font-mono:"JetBrains Mono",monospace;
+      --cell:min(calc((100vh - 120px)/8), calc((100vw - 280px)/8), 80px);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font-ui);
+      color:var(--txt);background:var(--bg);-webkit-font-smoothing:antialiased}
+
+    /* ═══ LAYOUT ═══ */
+    #app{position:fixed;inset:0;display:grid;grid-template-rows:46px 1fr 44px;background:var(--grid-bg)}
+    .fx-vig{position:fixed;inset:0;pointer-events:none;z-index:1;
+      background:radial-gradient(ellipse 65% 55% at 50% 45%,transparent 40%,rgba(0,0,0,.35) 100%)}
+
+    /* ═══ HUD ═══ */
+    #hud{display:flex;align-items:center;gap:6px;padding:0 12px;
+      background:var(--bg-panel);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:20}
+    .hj{display:flex;align-items:center;gap:8px;padding:3px 12px;border:1px solid var(--border);
+      background:rgba(0,0,0,.1);transition:all .3s;min-width:140px}
+    .hj.on{border-color:var(--c);box-shadow:0 0 10px var(--g)}
+    .hj-n{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--txt2)}
+    .hj-s{display:flex;gap:6px;font-family:var(--font-mono);font-size:9px;color:var(--txt-dim)}
+    .hj-s b{color:var(--txt2);font-size:12px;margin-right:1px}
+    .hud-mid{flex:1;display:flex;align-items:center;justify-content:center;gap:12px}
+    #tour-lbl{font-family:var(--font-mono);font-size:9px;color:var(--txt-dim);letter-spacing:.12em;text-transform:uppercase}
+    /* Timer gros et animé */
+    .timer-wrap{display:flex;align-items:center;gap:6px}
+    .timer-ring{width:38px;height:38px;position:relative}
+    .timer-ring svg{width:38px;height:38px;transform:rotate(-90deg)}
+    .timer-ring .r-bg{fill:none;stroke:var(--border2);stroke-width:3}
+    .timer-ring .r-fg{fill:none;stroke:var(--gold);stroke-width:3.5;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+    .timer-ring .r-fg.warn{stroke:#f0c040}
+    .timer-ring .r-fg.crit{stroke:var(--axis-bright)}
+    #t-txt{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--gold);min-width:34px}
+    #t-txt.warn{color:#f0c040} #t-txt.crit{color:var(--axis-bright);animation:puls .8s infinite}
+    @keyframes puls{0%,100%{opacity:.6}50%{opacity:1}}
+    /* Message */
+    #msg{font-family:var(--font-mono);font-size:9px;color:var(--txt-dim);letter-spacing:.05em;
+      max-width:260px;text-align:center;text-transform:uppercase;line-height:1.3}
+    /* Boutons HUD */
+    .bi{background:none;border:1px solid var(--border);cursor:pointer;height:30px;
+      display:flex;align-items:center;justify-content:center;color:var(--txt-dim);transition:all .2s}
+    .bi:hover{color:var(--gold);border-color:var(--gold)}
+    .vol-sl{width:50px;height:3px;-webkit-appearance:none;appearance:none;background:var(--border2);
+      outline:none;border-radius:2px;cursor:pointer;vertical-align:middle}
+    .vol-sl::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;border-radius:50%;
+      background:var(--gold);cursor:pointer}
+    [data-theme="light"] .fx-vig{background:radial-gradient(ellipse 65% 55% at 50% 45%,transparent 40%,rgba(80,60,30,.1) 100%)}
+    .bi-r{font-family:var(--font-mono);font-size:9px;padding:0 8px;letter-spacing:.08em}
+    .bi-t{width:30px;font-size:14px}
+
+    /* ═══ ZONE CENTRALE ═══ */
+    #zc{display:flex;align-items:center;justify-content:center;z-index:10;padding:2px 8px}
+
+    /* ═══ GRILLE ═══ */
+    #grille{display:grid;grid-template-columns:repeat(8,var(--cell));gap:1px;
+      border:2px solid var(--border2);background:var(--border);z-index:10}
+    .c{width:var(--cell);height:var(--cell);position:relative;display:flex;align-items:center;
+      justify-content:center;cursor:pointer;user-select:none;transition:all .12s}
+    .c0{background:var(--bg-cell-alt)} .c1{background:var(--bg-cell)}
+    .c:hover{z-index:2;box-shadow:inset 0 0 0 2px var(--txt-vdim)}
+    .coord{position:absolute;bottom:2px;right:3px;font-family:var(--font-mono);
+      font-size:clamp(7px,.8vw,9px);color:var(--txt-dim);opacity:.7;font-weight:500}
+    /* Brouillard de guerre */
+    
+    /* Zones */
+    .zj1{box-shadow:inset 0 0 0 1px rgba(74,141,184,.3)} .zj2{box-shadow:inset 0 0 0 1px rgba(168,50,50,.3)}
+    .ow1{background:rgba(74,141,184,.22)!important} .ow2{background:rgba(168,50,50,.22)!important}
+    /* Cases spéciales - icônes SVG */
+    .bonus::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;
+      background:radial-gradient(circle,#ffd700 30%,#c9a961);box-shadow:0 0 8px rgba(255,215,0,.7);
+      animation:glow 2s ease-in-out infinite alternate}
+    @keyframes glow{from{box-shadow:0 0 4px rgba(255,215,0,.4)}to{box-shadow:0 0 10px rgba(255,215,0,.8)}}
+    .piege::after{content:"";position:absolute;top:2px;left:2px;width:0;height:0;
+      border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #e74c3c;
+      filter:drop-shadow(0 0 5px rgba(231,76,60,.6))}
+    /* Interactions */
+    .sel{outline:3px solid var(--gold-bright);outline-offset:-1px;z-index:4;box-shadow:0 0 20px var(--gold-glow)!important}
+    .access{outline:2px solid var(--vert);outline-offset:-1px;z-index:3;box-shadow:inset 0 0 12px rgba(93,202,135,.2)!important}
+    .attack{outline:2px solid var(--axis-bright);outline-offset:-1px;z-index:3;box-shadow:inset 0 0 12px var(--axis-glow)!important}
+    .captur{outline:2px solid var(--gold);outline-offset:-1px;z-index:3}
+    .posable{box-shadow:inset 0 0 0 2px var(--gold)!important;cursor:crosshair}
+
+    /* ═══ PIÈCES (style échecs) ═══ */
+    .u-wrap{display:flex;flex-direction:column;align-items:center;pointer-events:none}
+    .u-piece{width:clamp(26px,3.8vw,48px);height:clamp(26px,3.8vw,48px)}
+    .u-f{font-family:var(--font-mono);font-size:clamp(6px,.7vw,8px);color:var(--txt-dim);font-weight:600}
+    .u-badge{position:absolute;top:1px;right:1px}
+    .badge-sh{width:10px;height:10px;border-radius:2px;background:var(--allies);
+      display:flex;align-items:center;justify-content:center;font-size:6px;color:white}
+
+    /* ═══ BARRE BAS ═══ */
+    #zb{display:flex;align-items:center;padding:0 12px;gap:8px;
+      background:var(--bg-panel);backdrop-filter:blur(10px);border-top:1px solid var(--border);z-index:20}
+    .dw{display:flex;align-items:center;gap:8px}
+    .dc{text-align:center;display:flex;flex-direction:column;align-items:center}
+    .dc svg{width:32px;height:32px}
+    .dn{font-family:var(--font-mono);font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.1em;font-weight:600;order:-1;margin-bottom:2px}
+    #rde{font-family:var(--font-mono);font-size:11px;color:var(--txt2);letter-spacing:.05em;text-transform:uppercase;min-width:100px;font-weight:600}
+    .bc{padding:5px 12px;cursor:pointer;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;
+      text-transform:uppercase;border:1px solid var(--border2);background:var(--bg-panel);color:var(--txt);transition:all .2s;white-space:nowrap}
+    .bc:hover:not(:disabled){color:var(--gold);border-color:var(--gold)}
+    .bc:disabled{opacity:.3;cursor:default}
+    .bc.pr{border-color:var(--gold);color:var(--gold);background:linear-gradient(180deg,rgba(201,169,97,.12),rgba(201,169,97,.02))}
+    .bc.pr:hover:not(:disabled){box-shadow:0 0 12px var(--gold-glow)}
+
+    /* Placement */
+    #ppl{display:none;align-items:center;gap:4px}
+    #ppl.visible{display:flex} #tpl{font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+    .bu{padding:4px 8px;border:1px solid var(--border2);background:var(--bg-panel);color:var(--txt);cursor:pointer;
+      font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:4px;transition:all .2s}
+    .bu:hover{border-color:var(--gold);color:var(--txt2)}
+    .bu.ch{border-color:var(--gold-bright);color:var(--gold-bright);background:rgba(201,169,97,.1)}
+
+    /* ═══ ACTION (overlay compact) ═══ */
+    #pa{display:none;position:fixed;bottom:50px;left:50%;transform:translateX(-50%);z-index:30;
+      padding:8px 14px;background:var(--bg-panel);border:1px solid var(--border2);backdrop-filter:blur(12px);max-width:92vw}
+    #pa.visible{display:flex;align-items:center;gap:6px}
+    #ta{font-family:var(--font-mono);font-size:8px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+    .ba{padding:5px 10px;cursor:pointer;font-family:var(--font-mono);font-size:8px;letter-spacing:.06em;
+      text-transform:uppercase;border:1px solid;transition:all .2s;white-space:nowrap}
+    .ba.att{background:rgba(208,80,80,.08);border-color:var(--axis);color:var(--axis-bright)}
+    .ba.att:hover{background:rgba(208,80,80,.22)}
+    .ba.def{background:rgba(74,141,184,.08);border-color:var(--allies);color:var(--allies-bright)}
+    .ba.def:hover{background:rgba(74,141,184,.22)}
+    .ba.pas{background:rgba(255,255,255,.02);border-color:var(--border2);color:var(--txt-dim)}
+    .ba.pas:hover{background:rgba(255,255,255,.06)}
+
+    /* ═══ COMBAT (latéral, ne bloque pas) ═══ */
+    #pc{display:none;position:fixed;top:52px;right:8px;z-index:30;width:320px;padding:16px;
+      background:var(--bg-panel);border:1px solid var(--border2);backdrop-filter:blur(12px);animation:sIn .3s ease}
+    @keyframes sIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    #pc.visible{display:block}
+    .cr{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    .cc{flex:1;text-align:center;padding:8px;border:1px solid var(--border)}
+    .cq{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+    .ci{height:36px;display:flex;align-items:center;justify-content:center}
+    .cd{font-family:var(--font-mono);font-size:9px;color:var(--txt-dim);line-height:1.5}
+    .ct{font-family:var(--font-display);font-size:18px;font-weight:700;margin-top:4px}
+    .cvs{font-family:var(--font-display);font-size:14px;color:var(--txt-vdim)}
+    .cres{text-align:center;padding:6px;font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+    .gagne{background:rgba(99,153,34,.12);color:#b8e080;border:1px solid rgba(99,153,34,.2)}
+    .tient{background:rgba(208,80,80,.08);color:var(--axis-bright);border:1px solid rgba(208,80,80,.12)}
+    .egal{background:rgba(255,255,255,.03);color:var(--txt-dim);border:1px solid var(--border)}
+    .cclose{position:absolute;top:3px;right:6px;background:none;border:none;color:var(--txt-dim);cursor:pointer;font-size:13px}
+    .cclose:hover{color:var(--txt)}
+
+    /* ═══ MENU ═══ */
+    #em{display:none;position:fixed;inset:0;z-index:50;background:var(--overlay);
+      flex-direction:column;align-items:center;justify-content:center;gap:14px}
+    #em.visible{display:flex}
+    .me{font-family:var(--font-mono);font-size:9px;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);
+      display:flex;align-items:center;gap:10px}
+    .me::before,.me::after{content:"";width:28px;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent)}
+    .mt{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4.5vw,52px);line-height:.95;text-align:center;color:var(--txt2)}
+    .mt .ac{color:var(--gold-bright);font-style:italic;font-weight:400}
+    .ms{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:6px}
+    .bm{min-width:260px;padding:12px 24px;font-family:var(--font-display);font-size:12px;font-weight:600;
+      letter-spacing:.16em;text-transform:uppercase;color:var(--txt);cursor:pointer;border:1px solid var(--border2);
+      background:linear-gradient(180deg,rgba(201,169,97,.06),rgba(201,169,97,.01));transition:all .3s}
+    .bm:hover{border-color:var(--gold);color:var(--txt2);box-shadow:0 0 20px var(--gold-glow);letter-spacing:.22em}
+    .bm .mm{display:block;font-family:var(--font-mono);font-size:7px;color:var(--txt-dim);letter-spacing:.16em;margin-top:2px}
+    #smd{display:none;flex-direction:column;gap:5px;align-items:center}
+    #smd.visible{display:flex}
+    .bd{min-width:200px;padding:7px 18px;font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--txt);cursor:pointer;background:rgba(0,0,0,.12);border:1px solid var(--border);transition:all .2s}
+    .bd:hover{border-color:var(--gold);color:var(--gold)}
+
+    /* Victoire / Tuto / Regles - même style que avant */
+    #ev{display:none;position:fixed;inset:0;z-index:60;background:var(--overlay);flex-direction:column;align-items:center;justify-content:center;gap:12px}
+    #ev.visible{display:flex}
+    #vt{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,3.5vw,40px);color:var(--txt2);text-shadow:0 0 25px var(--gold-glow)}
+    #vs{font-family:var(--font-mono);font-size:10px;color:var(--txt-dim);letter-spacing:.1em;text-transform:uppercase}
+    #br{padding:10px 24px;border:1px solid var(--gold);cursor:pointer;font-family:var(--font-display);font-size:12px;font-weight:600;
+      letter-spacing:.16em;text-transform:uppercase;color:var(--gold);background:rgba(201,169,97,.06);transition:all .3s}
+    #br:hover{background:rgba(201,169,97,.15);box-shadow:0 0 20px var(--gold-glow)}
+    #tut{display:none;position:fixed;inset:0;z-index:70;background:var(--overlay);align-items:center;justify-content:center}
+    #tut.visible{display:flex}
+    .tc{max-width:440px;padding:24px 28px;background:var(--bg-panel);border:1px solid var(--border2);backdrop-filter:blur(12px);text-align:center}
+    .te{font-family:var(--font-mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+    .tt{font-family:var(--font-display);font-size:16px;color:var(--txt2);margin-bottom:8px}
+    .tx{font-family:var(--font-ui);font-size:11px;color:var(--txt-dim);line-height:1.7;margin-bottom:14px}
+    .ta{display:flex;gap:6px;justify-content:center}
+    .tp{font-family:var(--font-mono);font-size:7px;color:var(--txt-vdim);letter-spacing:.08em;text-transform:uppercase;background:none;border:none;cursor:pointer;padding:3px 8px}
+    .tp:hover{color:var(--txt-dim)}
+    #pr{display:none;position:fixed;inset:0;z-index:55;background:var(--overlay);align-items:center;justify-content:center}
+    #pr.visible{display:flex}
+    .rc{max-width:520px;max-height:80vh;overflow-y:auto;padding:22px 26px;background:var(--bg-panel);border:1px solid var(--border2)}
+    .rc h2{font-family:var(--font-display);font-size:18px;color:var(--txt2);margin-bottom:12px}
+    .rc h3{font-family:var(--font-display);font-size:12px;color:var(--gold);margin:12px 0 5px}
+    .rc p{font-size:10px;color:var(--txt-dim);line-height:1.7;margin-bottom:5px}
+    .rt{width:100%;border-collapse:collapse;margin:6px 0;font-family:var(--font-mono);font-size:8px;color:var(--txt-dim)}
+    .rt th{text-align:left;padding:4px 6px;border-bottom:1px solid var(--border2);color:var(--gold);letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+    .rt td{padding:4px 6px;border-bottom:1px solid var(--border)}
+
+    @media(max-width:900px){:root{--cell:min(calc((100vh - 130px)/8),calc((100vw - 16px)/8))}
+      .hj{min-width:80px;padding:2px 6px} .hj-n{font-size:10px} .hj-s{font-size:7px}
+      #msg{max-width:120px;font-size:7px} #t-txt{font-size:13px}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="fx-vig"></div>
+  <!-- MENU -->
+  <div id="em" class="visible">
+    <div class="me">Commandement Stratégique</div>
+    <div class="mt">Conquête<br><span class="ac">des</span> Territoires</div>
+    <div class="ms">Sélectionnez votre mode d'opération</div>
+    <button class="bm" onclick="choisirMode('jvj')">Joueur contre Joueur<span class="mm">PvP · Deux commandants</span></button>
+    <button class="bm" onclick="afficherDifficulte()">Joueur contre Ordinateur<span class="mm">PvE · Intelligence tactique</span></button>
+    <div id="smd"><div class="ms" style="margin:0">Niveau de l'IA</div>
+      <button class="bd" onclick="choisirMode('jvo','facile')">🟢 Facile</button>
+      <button class="bd" onclick="choisirMode('jvo','normal')">🟡 Normal</button>
+      <button class="bd" onclick="choisirMode('jvo','difficile')">🔴 Difficile</button>
+    </div>
+  </div>
+  <!-- HUD -->
+  <div id="hud">
+    <button class="bi bi-r" onclick="quitterPartie()" title="Quitter" style="font-size:11px">✕ Quitter</button>
+    <div class="hj on" id="sc1" style="--c:var(--allies);--g:var(--allies-glow)">
+      <div class="hj-n" id="n1">Alliés</div>
+      <div class="hj-s"><span><b id="nb1">0</b>📍</span><span><b id="nu1">5</b>⚔</span></div>
+    </div>
+    <div class="hud-mid">
+      <span id="tour-lbl">Tour —</span>
+      <div class="timer-wrap">
+        <div class="timer-ring"><svg viewBox="0 0 44 44"><circle class="r-bg" cx="22" cy="22" r="18"/><circle class="r-fg" id="t-arc" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"/></svg></div>
+        <span id="t-txt">45s</span>
+      </div>
+      <p id="msg">Sélectionnez le mode</p>
+    </div>
+    <div style="display:flex;gap:4px;align-items:center">
+      <button class="bi bi-r" onclick="toggleRegles()">? Règles</button>
+      <button class="bi bi-t" id="btn-son" onclick="SON.toggleMute()" title="Son">🔊</button>
+      <input type="range" id="vol-slider" min="0" max="100" value="50" oninput="SON.setVolume(this.value/100)" class="vol-sl"/>
+      <button class="bi bi-t" id="bt" onclick="toggleTheme()" title="Thème">☀</button>
+    </div>
+    <div class="hj" id="sc2" style="--c:var(--axis);--g:var(--axis-glow)">
+      <div class="hj-n" id="n2">Axe</div>
+      <div class="hj-s"><span><b id="nb2">0</b>📍</span><span><b id="nu2">5</b>⚔</span></div>
+    </div>
+  </div>
+  <!-- GRILLE -->
+  <div id="zc"><div id="grille"></div></div>
+  <!-- BAS -->
+  <div id="zb">
+    <div class="dw" id="pde" style="display:none">
+      <div class="dc"><div id="de1"></div><span class="dn">Alliés</span></div>
+      <div class="dc"><div id="de2"></div><span class="dn">Axe</span></div>
+      <button class="bc pr" id="bl" onclick="onLancer()">Lancer</button>
+      <span id="rde"></span>
+    </div>
+    <div id="ppl"></div>
+    <div style="flex:1"></div>
+    <button class="bc" id="bs" onclick="onSuivant()" disabled style="display:none">Suivant ▸</button>
+    <button class="bc" id="bf" onclick="onFinTour()" disabled style="display:none">Nouveau tour ↻</button>
+  </div>
+</div>
+<!-- OVERLAYS -->
+<div id="pa"></div>
+<div id="pc"></div>
+<div id="ev"><div id="vt">Victoire !</div><div id="vs"></div><button id="br" onclick="if(URL_PARAMS.j1id){retourCarteAvecResultat(G.dernierGagnant)}else{onRejouer()}">↻ Continuer la campagne</button><button class="bc" onclick="onRejouer()" style="margin-top:8px">↻ Rejouer</button></div>
+<div id="tut"></div>
+<div id="pr"><div class="rc">
+  <h2>Règles du Jeu</h2>
+  <h3>Objectif</h3><p>Contrôler 33 cases sur 64 ou éliminer toutes les unités adverses.</p>
+  <h3>Unités</h3>
+  <table class="rt"><tr><th>Unité</th><th>Force</th><th>Dépl.</th><th>Spécial</th></tr>
+    <tr><td>Tank</td><td>+3</td><td>1</td><td>🎯 Attaque à distance 2 (ligne droite)</td></tr>
+    <tr><td>Soldat</td><td>+2</td><td>1</td><td>⚔ +1 si un allié est adjacent (formation)</td></tr>
+    <tr><td>Cavalier</td><td>+1</td><td>2</td><td>🐴 Ignore les pièges</td></tr></table>
+  <h3>Tour</h3><p>1. Lancez le dé · 2. Le plus haut score joue en premier · 3. Maximum 2 actions par tour · 4. Vous pouvez passer la main avant d\'avoir utilisé vos 2 actions.</p>
+  <h3>Cases spéciales</h3><p>● Or = Bonus +1 · ▲ Rouge = Piège -1 (sauf cavalier). Cachées, révélées au passage.</p>
+  <h3>Défendre vs Passer</h3>
+  <p>🛡 <b>Défendre</b> : +1 si attaqué ce tour. ⚠ MAIS bloque votre attaque au <b>tour suivant</b> (🚫). Choix lourd !</p>
+  <p>— <b>Passer</b> : aucun bonus ni pénalité. Vous restez libre au tour suivant. Choix sûr.</p>
+  <div style="text-align:center;margin-top:14px"><button class="bc" onclick="toggleRegles()">Fermer</button></div>
+</div></div>
+<script src="js/constantes.js"></script>
+<script src="js/son.js"></script>
+<script src="js/affichage.js"></script>
+<script src="js/logique.js"></script>
+<script src="js/etat.js"></script>
+<script src="js/main.js"></script>
+<script>SON.lancerMusique('sons/musique.mp3');</script>
+</body>
+</html>
