@@ -93,19 +93,8 @@ Accessible via le bouton "🗺 Carte de conquête", elle montre :
 
 L'IA respecte la limite de 2 actions/tour et exploite les capacités spéciales.
 
----
 
-## FAQ — Questions fréquentes
 
-### Quand le Soldat reçoit-il le +1 de formation ?
-Le bonus s'applique **uniquement pendant le combat**. Quand un soldat attaque ou défend, le jeu vérifie si une unité alliée (tank, soldat ou cavalier) est sur une case adjacente. Si oui → +1 au score. L'indicateur vert ⬆+1 s'affiche sous le soldat quand il est en position de formation. En dehors du combat, le bonus n'a aucun effet.
-
-### Les dés en bas ≠ dés du combat — pourquoi ?
-Ce sont **deux lancers différents** :
-- **Dés du bas** : lancés au début du tour pour déterminer qui joue en premier. Restent affichés comme rappel.
-- **Dés du combat** : lancés à chaque attaque pour calculer le résultat. Ce sont de nouveaux lancers indépendants.
-
-### Le Tank peut-il faire 2 actions consécutives ?
 **Non.** Chaque unité ne peut agir qu'une seule fois par tour (vérifié par le système). Les 2 actions signifient 2 unités différentes, pas la même deux fois.
 
 ### À quoi sert "Passer" ?
